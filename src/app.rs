@@ -1,25 +1,84 @@
-/// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[derive(serde::Deserialize, serde::Serialize)]
-#[serde(default)] // if we add new fields, give them default values when deserializing old state
-pub struct TemplateApp {
-    // Example stuff:
-    label: String,
+use crate::{
+    data::{GlobalState, RoundState},
+    scenes::GameScene,
+    widgets::FunctionPanel,
+};
+use egui::ImageSource;
+use log::debug;
 
-    #[serde(skip)] // This how you opt-out of serialization of a field
-    value: f32,
+#[derive(Clone)]
+pub struct GameImageSource {
+    pub normal_block: egui::ImageSource<'static>,
+    pub empty_block: egui::ImageSource<'static>,
+    pub mine_block: egui::ImageSource<'static>,
+    pub mine_exploded: egui::ImageSource<'static>,
+    pub flagged: egui::ImageSource<'static>,
+    pub num1: egui::ImageSource<'static>,
+    pub num2: egui::ImageSource<'static>,
+    pub num3: egui::ImageSource<'static>,
+    pub num4: egui::ImageSource<'static>,
+    pub num5: egui::ImageSource<'static>,
+    pub num6: egui::ImageSource<'static>,
+    pub num7: egui::ImageSource<'static>,
+    pub num8: egui::ImageSource<'static>,
 }
-
-impl Default for TemplateApp {
+impl GameImageSource {
+    pub fn get_num_image_source(&self, num: u8) -> ImageSource {
+        return match num {
+            0 => self.empty_block.clone(),
+            1 => self.num1.clone(),
+            2 => self.num2.clone(),
+            3 => self.num3.clone(),
+            4 => self.num4.clone(),
+            5 => self.num5.clone(),
+            6 => self.num6.clone(),
+            7 => self.num7.clone(),
+            8 => self.num8.clone(),
+            _ => panic!("Out of range"),
+        };
+    }
+}
+impl Default for GameImageSource {
     fn default() -> Self {
         Self {
-            // Example stuff:
-            label: "Hello World!".to_owned(),
-            value: 2.7,
+            normal_block: egui::include_image!("../assets/game/block.png"),
+            empty_block: egui::include_image!("../assets/game/empty.png"),
+            mine_block: egui::include_image!("../assets/game/mine.png"),
+            mine_exploded: egui::include_image!("../assets/game/mine_exploded.png"),
+            flagged:egui::include_image!("../assets/game/flag.png"),
+            num1: egui::include_image!("../assets/game/num1.png"),
+            num2: egui::include_image!("../assets/game/num2.png"),
+            num3: egui::include_image!("../assets/game/num3.png"),
+            num4: egui::include_image!("../assets/game/num4.png"),
+            num5: egui::include_image!("../assets/game/num5.png"),
+            num6: egui::include_image!("../assets/game/num6.png"),
+            num7: egui::include_image!("../assets/game/num7.png"),
+            num8: egui::include_image!("../assets/game/num8.png"),
         }
     }
 }
 
-impl TemplateApp {
+/// We derive Deserialize/Serialize so we can persist app state on shutdown.
+#[derive(serde::Deserialize, serde::Serialize)]
+#[serde(default)] // if we add new fields, give them default values when deserializing old state
+pub struct MineSweeper {
+    global_state: GlobalState,
+    round_state: RoundState,
+    #[serde(skip)]
+    image_sources: GameImageSource,
+}
+
+impl Default for MineSweeper {
+    fn default() -> Self {
+        Self {
+            global_state: GlobalState::default(),
+            round_state: RoundState::default(),
+            image_sources: GameImageSource::default(),
+        }
+    }
+}
+
+impl MineSweeper {
     /// Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
@@ -27,15 +86,16 @@ impl TemplateApp {
 
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
-        if let Some(storage) = cc.storage {
-            eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default()
-        } else {
-            Default::default()
-        }
+        // if let Some(storage) = cc.storage {
+        //     eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default()
+        // } else {
+        //     Default::default()
+        // }
+        Default::default()
     }
 }
 
-impl eframe::App for TemplateApp {
+impl eframe::App for MineSweeper {
     /// Called by the framework to save state before shutdown.
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, eframe::APP_KEY, self);
@@ -43,67 +103,95 @@ impl eframe::App for TemplateApp {
 
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Put your widgets into a `SidePanel`, `TopBottomPanel`, `CentralPanel`, `Window` or `Area`.
-        // For inspiration and more examples, go to https://emilk.github.io/egui
+        // Global Style
+        ctx.style_mut(|style| {
+            style.spacing.window_margin = egui::Margin::ZERO;
+            style.spacing.item_spacing = egui::Vec2::ZERO;
+            style.visuals.window_stroke = egui::Stroke::NONE;
+            style.debug.show_widget_hits = true;
+            style.debug.debug_on_hover = true;
+            style.spacing.interact_size = egui::Vec2::ZERO;
+            style.spacing.indent = 0.0;
+        });
 
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // The top panel is often a good place for a menu bar:
-
-            egui::MenuBar::new().ui(ui, |ui| {
-                // NOTE: no File->Quit on web pages!
-                let is_web = cfg!(target_arch = "wasm32");
-                if !is_web {
-                    ui.menu_button("File", |ui| {
-                        if ui.button("Quit").clicked() {
-                            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-                        }
-                    });
-                    ui.add_space(16.0);
+        egui::CentralPanel::default()
+            .frame(egui::Frame::NONE.fill(egui::Color32::DARK_GRAY))
+            .show(ctx, |ui| {
+                // // Resize Logic
+                let current_window_size = ui.available_size();
+                // println!("current_window_size {:?}", current_window_size);
+                let last_window_size = egui::vec2(
+                    self.global_state.window_size.0,
+                    self.global_state.window_size.1,
+                );
+                // // println!(
+                // //     "last_window_size:{:?} --- current_window_size:{:?}",
+                // //     last_window_size, current_window_size
+                // // );
+                if current_window_size != last_window_size {
+                    self.global_state.content_size =
+                        crate::utils::calculate_content_display_size(current_window_size);
+                    ctx.send_viewport_cmd(egui::ViewportCommand::MinInnerSize(egui::vec2(
+                        self.global_state.content_size.0,
+                        500.0,
+                    )));
+                    self.global_state.window_size = (current_window_size.x, current_window_size.y);
                 }
+                // Insert nessecery data for nested UI to render
+                ui.data_mut(|d| d.insert_temp(egui::Id::NULL, self.global_state.clone()));
+                ui.data_mut(|d| {
+                    d.insert_temp(egui::Id::new("IMAGE_SOURCE"), self.image_sources.clone())
+                });
+                debug!("{:?}", self.global_state);
 
-                egui::widgets::global_theme_preference_buttons(ui);
+                // Padding two side panels
+                let padding_size =
+                    ((self.global_state.window_size.0 - self.global_state.content_size.0) / 2.0)
+                        .max(0.0);
+
+                // Render Main Scene
+                // Calculate size for different sections
+                self.global_state.layout_state.scene_panel_height =
+                    self.global_state.content_size.1 * 0.95;
+                self.global_state.layout_state.function_panel_height =
+                    self.global_state.content_size.1
+                        - self.global_state.layout_state.scene_panel_height;
+                self.global_state.layout_state.global_x_padding = padding_size;
+
+                egui::CentralPanel::default()
+                    .frame(egui::Frame::NONE)
+                    .show(ctx, |ui| {
+                        let scene = crate::scenes::GameScene::new(
+                            egui::pos2(padding_size, 0.0),
+                            self.global_state.content_size.0,
+                            self.global_state.layout_state.scene_panel_height,
+                            &mut self.round_state,
+                        );
+                        ui.put(
+                            egui::Rect::from_min_size(
+                                egui::pos2(padding_size, 0.0),
+                                egui::vec2(
+                                    self.global_state.content_size.0,
+                                    self.global_state.layout_state.scene_panel_height,
+                                ),
+                            ),
+                            scene,
+                        );
+                        let function_panel = crate::widgets::FunctionPanel::new();
+                        ui.put(
+                            egui::Rect::from_min_size(
+                                egui::pos2(
+                                    padding_size,
+                                    self.global_state.layout_state.scene_panel_height,
+                                ),
+                                egui::vec2(
+                                    self.global_state.content_size.0,
+                                    self.global_state.content_size.1,
+                                ),
+                            ),
+                            function_panel,
+                        );
+                    })
             });
-        });
-
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
-            ui.heading("eframe template");
-
-            ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(&mut self.label);
-            });
-
-            ui.add(egui::Slider::new(&mut self.value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                self.value += 1.0;
-            }
-
-            ui.separator();
-
-            ui.add(egui::github_link_file!(
-                "https://github.com/emilk/eframe_template/blob/main/",
-                "Source code."
-            ));
-
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                powered_by_egui_and_eframe(ui);
-                egui::warn_if_debug_build(ui);
-            });
-        });
     }
-}
-
-fn powered_by_egui_and_eframe(ui: &mut egui::Ui) {
-    ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing.x = 0.0;
-        ui.label("Powered by ");
-        ui.hyperlink_to("egui", "https://github.com/emilk/egui");
-        ui.label(" and ");
-        ui.hyperlink_to(
-            "eframe",
-            "https://github.com/emilk/egui/tree/master/crates/eframe",
-        );
-        ui.label(".");
-    });
 }

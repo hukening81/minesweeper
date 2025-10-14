@@ -1,4 +1,10 @@
 #![warn(clippy::all, rust_2018_idioms)]
 
 mod app;
-pub use app::TemplateApp;
+mod constants;
+mod scenes;
+mod data;
+mod utils;
+mod widgets;
+mod game_logic;
+pub use app::MineSweeper;

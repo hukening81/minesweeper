@@ -1,10 +1,10 @@
 use crate::data::CellData;
 use crate::data::CellPos;
 use crate::data::GameBoardData;
-use rand::seq::SliceRandom;
+use rand::seq::SliceRandom as _;
 
 pub fn generate_new_board(board_size: usize, total_mine: usize) -> GameBoardData {
-    let mut mine_map = vec![false; usize::from(board_size * board_size)];
+    let mut mine_map = vec![false; board_size * board_size];
     let slice = &mut mine_map[0..total_mine];
     slice.fill(true);
     let mut rng = rand::rng();
@@ -29,26 +29,26 @@ pub fn generate_new_board(board_size: usize, total_mine: usize) -> GameBoardData
             if j > 0 {
                 result[j - 1][k].nearby_mines += 1;
                 if k > 0 {
-                    result[j - 1][k - 1].nearby_mines += 1
+                    result[j - 1][k - 1].nearby_mines += 1;
                 }
                 if k < max_index{
-                    result[j - 1][k + 1].nearby_mines += 1
+                    result[j - 1][k + 1].nearby_mines += 1;
                 }
             }
             if j < max_index{
                 result[j + 1][k].nearby_mines += 1;
                 if k > 0 {
-                    result[j + 1][k - 1].nearby_mines += 1
+                    result[j + 1][k - 1].nearby_mines += 1;
                 }
                 if k < max_index{
-                    result[j + 1][k + 1].nearby_mines += 1
+                    result[j + 1][k + 1].nearby_mines += 1;
                 }
             }
             if k > 0 {
-                result[j][k - 1].nearby_mines += 1
+                result[j][k - 1].nearby_mines += 1;
             }
             if k < max_index{
-                result[j][k + 1].nearby_mines += 1
+                result[j][k + 1].nearby_mines += 1;
             }
         }
     }
@@ -58,5 +58,5 @@ pub fn generate_new_board(board_size: usize, total_mine: usize) -> GameBoardData
     };
     board_data.show_mine_location();
     board_data.show_game_board();
-    return  board_data;
+    board_data
 }

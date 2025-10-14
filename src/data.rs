@@ -1,12 +1,6 @@
-use std::fmt::Display;
-
 use chrono::DateTime;
-use egui::TextBuffer;
 
-use crate::{
-    constants::{DEFAULT_BOARD_SIZE, DEFAULT_MINE_AMOUNT},
-    widgets::GameBoard,
-};
+use crate::constants::{DEFAULT_BOARD_SIZE, DEFAULT_MINE_AMOUNT};
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
 pub struct GameSettings {
@@ -55,7 +49,7 @@ impl Default for GlobalState {
     }
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
+#[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq, Eq)]
 pub enum CellRenderState {
     Covered,
     Revealed,
@@ -100,11 +94,11 @@ impl GameBoardData {
                     tmp_string.push_str(" O");
                 }
             }
-            tmp_string.push_str("\n");
+            tmp_string.push('\n');
             text += tmp_string.as_str();
             tmp_string.clear();
         }
-        println!("{}", text);
+        println!("{text}");
     }
     pub fn show_game_board(&self){
                 let mut text = String::new();
@@ -118,56 +112,56 @@ impl GameBoardData {
                     tmp_string.push_str(format!(" {}",self.cells[j][k].nearby_mines).as_str());
                 }
             }
-            tmp_string.push_str("\n");
+            tmp_string.push('\n');
             text += tmp_string.as_str();
             tmp_string.clear();
         }
-        println!("{}", text);
+        println!("{text}");
 
     }
 
 
     pub fn get_cell(&self, pos: &CellPos) -> CellData {
-        return self.cells[pos.x][pos.y].clone();
+        self.cells[pos.x][pos.y].clone()
     }
     pub fn update_cells(&mut self, data: Vec<CellData>) {
         let board_size = self.cells.len();
-        data.iter().for_each(|cell| {
+        for cell in &data {
             if cell.position.x < board_size && cell.position.y < board_size {
                 self.cells[cell.position.x][cell.position.y] = cell.clone();
             }
-        })
+        }
     }
     pub fn get_surround_cells(&self, pos: &CellPos) -> Vec<CellData> {
-        let max_index = *(&self.cells.len().clone())-1;
+        let max_index = self.cells.len()-1;
         let mut result: Vec<CellData> = vec![];
 
         if pos.x > 0 {
-            result.push(self.cells[pos.x-1][pos.y].to_owned());
+            result.push(self.cells[pos.x-1][pos.y].clone());
             if pos.y > 0 {
-                result.push(self.cells[pos.x-1][pos.y-1].to_owned());
+                result.push(self.cells[pos.x-1][pos.y-1].clone());
             }
             if pos.y < max_index {
-                result.push(self.cells[pos.x-1][pos.y+1].to_owned());
+                result.push(self.cells[pos.x-1][pos.y+1].clone());
             }
         }
         if pos.x < max_index {
-            result.push(self.cells[pos.x+1][pos.y].to_owned());
+            result.push(self.cells[pos.x+1][pos.y].clone());
             if pos.y > 0 {
-                result.push(self.cells[pos.x+1][pos.y-1].to_owned());
+                result.push(self.cells[pos.x+1][pos.y-1].clone());
             }
             if pos.y < max_index {
-                result.push(self.cells[pos.x+1][pos.y+1].to_owned());
+                result.push(self.cells[pos.x+1][pos.y+1].clone());
             }
         }
         if pos.y > 0 {
-            result.push(self.cells[pos.x][pos.y-1].to_owned());
+            result.push(self.cells[pos.x][pos.y-1].clone());
         }
         if pos.y < max_index {
-            result.push(self.cells[pos.x][pos.y+1].to_owned());
+            result.push(self.cells[pos.x][pos.y+1].clone());
         }
 
-        return result;
+        result
     }
 }
 
@@ -237,7 +231,7 @@ pub enum CellState {
     Opened(OpenedCellState),
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
+#[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq, Eq)]
 pub struct CellPos {
     pub x: usize,
     pub y: usize,

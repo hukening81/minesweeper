@@ -1,8 +1,4 @@
-use crate::{
-    data::{GlobalState, RoundState},
-    scenes::GameScene,
-    widgets::FunctionPanel,
-};
+use crate::data::{GlobalState, RoundState};
 use egui::ImageSource;
 use log::debug;
 
@@ -24,7 +20,7 @@ pub struct GameImageSource {
 }
 impl GameImageSource {
     pub fn get_num_image_source(&self, num: u8) -> ImageSource {
-        return match num {
+        match num {
             0 => self.empty_block.clone(),
             1 => self.num1.clone(),
             2 => self.num2.clone(),
@@ -35,7 +31,7 @@ impl GameImageSource {
             7 => self.num7.clone(),
             8 => self.num8.clone(),
             _ => panic!("Out of range"),
-        };
+        }
     }
 }
 impl Default for GameImageSource {
@@ -61,6 +57,7 @@ impl Default for GameImageSource {
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
+#[derive(Default)]
 pub struct MineSweeper {
     global_state: GlobalState,
     round_state: RoundState,
@@ -68,15 +65,6 @@ pub struct MineSweeper {
     image_sources: GameImageSource,
 }
 
-impl Default for MineSweeper {
-    fn default() -> Self {
-        Self {
-            global_state: GlobalState::default(),
-            round_state: RoundState::default(),
-            image_sources: GameImageSource::default(),
-        }
-    }
-}
 
 impl MineSweeper {
     /// Called once before the first frame.
@@ -140,7 +128,7 @@ impl eframe::App for MineSweeper {
                 // Insert nessecery data for nested UI to render
                 ui.data_mut(|d| d.insert_temp(egui::Id::NULL, self.global_state.clone()));
                 ui.data_mut(|d| {
-                    d.insert_temp(egui::Id::new("IMAGE_SOURCE"), self.image_sources.clone())
+                    d.insert_temp(egui::Id::new("IMAGE_SOURCE"), self.image_sources.clone());
                 });
                 debug!("{:?}", self.global_state);
 

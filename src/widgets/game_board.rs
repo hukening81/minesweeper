@@ -1,6 +1,6 @@
 use crate::{
     app::GameImageSource,
-    data::{CellData, CellPos, CellRenderState, CellState, RoundState, RoundStateType},
+    data::{CellData, CellPos, CellRenderState, RoundState},
 };
 
 pub struct Cell {
@@ -15,13 +15,14 @@ impl Cell {
 
 impl egui::Widget for Cell {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        let response = match self.data.render_state {
+        
+        match self.data.render_state {
             CellRenderState::Revealed => ui.image(
                 self.image_source
                     .get_num_image_source(self.data.nearby_mines),
             ),
             CellRenderState::Covered => {
-                if (self.data.is_flagged) {
+                if self.data.is_flagged {
                     ui.image(self.image_source.flagged)
                 } else {
                     ui.image(self.image_source.normal_block)
@@ -29,8 +30,7 @@ impl egui::Widget for Cell {
             }
             CellRenderState::GameEnded(true) => ui.image(self.image_source.mine_block),
             CellRenderState::GameEnded(false) => ui.image(self.image_source.mine_exploded),
-        };
-        return response;
+        }
     }
 }
 pub struct GameBoard<'a> {
@@ -47,7 +47,7 @@ impl<'a> GameBoard<'a> {
         }
     }
 }
-impl<'a> egui::Widget for GameBoard<'a> {
+impl egui::Widget for GameBoard<'_> {
     fn ui(mut self, ui: &mut egui::Ui) -> egui::Response {
         // let global_state: crate::data::GlobalState =
         //     ui.data(|d| d.get_temp(egui::Id::NULL)).unwrap();
@@ -80,7 +80,7 @@ impl<'a> egui::Widget for GameBoard<'a> {
                                 ),
                                 cell_size,
                             ),
-                            egui::Id::from(format!("{},{}", j, k)),
+                            egui::Id::from(format!("{j},{k}")),
                             egui::Sense::click(),
                         );
                         if response.clicked_by(egui::PointerButton::Primary) {
@@ -96,10 +96,10 @@ impl<'a> egui::Widget for GameBoard<'a> {
             .response
     }
 }
-impl<'a> GameBoard<'a> {
+impl GameBoard<'_> {
     fn handle_right_click(&mut self, pos: &CellPos) {
         let board_data = &self.round_state.board_data;
-        let mut cell = (&board_data.cells[pos.x][pos.y]).to_owned();
+        let mut cell = board_data.cells[pos.x][pos.y].clone();
         if cell.render_state == CellRenderState::Covered {
             cell.is_flagged = !cell.is_flagged;
             self.round_state.board_data.update_cells(vec![cell]);
@@ -110,20 +110,19 @@ impl<'a> GameBoard<'a> {
         let origin_cell = &board_data.cells[pos.x][pos.y];
         match origin_cell.render_state {
             CellRenderState::Covered => {
-                self.reveal_cell(&pos);
+                self.reveal_cell(pos);
             }
             CellRenderState::Revealed => {
                 if let Some((last_click_pos, last_click_time)) = &board_data.last_click {
                     if last_click_pos.clone() == pos.clone()
-                        && last_click_time.clone() - chrono::Utc::now()
+                        && *last_click_time - chrono::Utc::now()
                             < chrono::TimeDelta::milliseconds(250)
                         && origin_cell.nearby_mines > 0
                     {
                         let surround_cells = self
                             .round_state
                             .board_data
-                            .get_surround_cells(pos)
-                            .to_owned();
+                            .get_surround_cells(pos).clone();
                         if origin_cell.nearby_mines
                             == surround_cells.iter().filter(|it| it.is_flagged).count() as u8
                         {
@@ -149,13 +148,9 @@ impl<'a> GameBoard<'a> {
             cell.render_state = CellRenderState::Revealed;
             self.round_state
                 .board_data
-                .update_cells(vec![cell.to_owned()]);
+                .update_cells(vec![cell.clone()]);
             if cell.nearby_mines == 0 {
-                // println!(
-                //     "Revealing near by cells from ({},{})",
-                //     cell.position.x, cell.position.y
-                // );
-                self.reveal_nearby_cell(pos)
+                self.reveal_nearby_cell(pos);
             }
         }
     }
@@ -163,23 +158,12 @@ impl<'a> GameBoard<'a> {
         let surround_cells = self
             .round_state
             .board_data
-            .get_surround_cells(pos)
-            .to_owned();
-        surround_cells.iter().for_each(|it| {
-            println!(
-                "Revealing cell ({},{}), request by ({},{}),nearby mines count: {}, requested is mine?{}",
-                it.position.x,
-                it.position.y,
-                pos.x,
-                pos.y,
-                self.round_state.board_data.get_cell(pos).nearby_mines,
-                it.is_mine,
-
-            );
-            if (!it.is_flagged) {
-                self.reveal_cell(&it.position)
+            .get_surround_cells(pos).clone();
+        for it in &surround_cells {
+            if !it.is_flagged {
+                self.reveal_cell(&it.position);
             }
-        });
+        }
     }
     fn reveal_non_flagged_cell(&mut self, pos: &CellPos) {}
 }

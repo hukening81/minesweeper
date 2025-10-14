@@ -1,5 +1,4 @@
 use egui::Widget;
-use log::debug;
 
 use crate::{
     data::RoundState,
@@ -27,8 +26,8 @@ impl<'a> GameScene<'a> {
     }
 }
 
-impl<'a> Widget for GameScene<'a> {
-    fn ui(mut self, ui: &mut egui::Ui) -> egui::Response {
+impl Widget for GameScene<'_> {
+    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let global_state: crate::data::GlobalState =
             ui.data(|d| d.get_temp(egui::Id::NULL)).unwrap();
 
@@ -52,7 +51,7 @@ impl<'a> Widget for GameScene<'a> {
                     GameBoard::new(
                         egui::pos2(self.render_origin.x, self.height - self.width),
                         self.width,
-                        &mut self.round_state,
+                        self.round_state,
                     ),
                 )
             })

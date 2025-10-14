@@ -165,5 +165,5 @@ impl GameBoard<'_> {
             }
         }
     }
-    fn reveal_non_flagged_cell(&mut self, pos: &CellPos) {}
+
 }

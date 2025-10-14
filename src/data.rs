@@ -1,4 +1,5 @@
 use chrono::DateTime;
+use egui::TopBottomPanel;
 
 use crate::constants::{DEFAULT_BOARD_SIZE, DEFAULT_MINE_AMOUNT};
 
@@ -100,8 +101,8 @@ impl GameBoardData {
         }
         println!("{text}");
     }
-    pub fn show_game_board(&self){
-                let mut text = String::new();
+    pub fn show_game_board(&self) {
+        let mut text = String::new();
         let board_size = self.cells.len();
         for j in 0..board_size {
             let mut tmp_string = String::new();
@@ -109,7 +110,7 @@ impl GameBoardData {
                 if (self.cells[j][k]).is_mine {
                     tmp_string.push_str(" X");
                 } else {
-                    tmp_string.push_str(format!(" {}",self.cells[j][k].nearby_mines).as_str());
+                    tmp_string.push_str(format!(" {}", self.cells[j][k].nearby_mines).as_str());
                 }
             }
             tmp_string.push('\n');
@@ -117,10 +118,31 @@ impl GameBoardData {
             tmp_string.clear();
         }
         println!("{text}");
-
     }
-
-
+    pub fn get_flag_count(&self) -> usize {
+         let result = self.cells.iter().map(|it| {
+            it.iter().map(|it| {
+                if it.is_flagged {
+                    1
+                } else {
+                    0
+                }
+            }).reduce(|a,b|a+b).unwrap_or(0)
+        }).reduce(|a,b|a+b).unwrap_or(0);
+        result as usize
+    }
+    pub fn get_remain_cell_count(&self) -> usize {
+        let result = self.cells.iter().map(|it| {
+            it.iter().map(|it| {
+                if it.render_state == CellRenderState::Covered {
+                    1
+                } else {
+                    0
+                }
+            }).reduce(|a,b|a+b).unwrap_or(0)
+        }).reduce(|a,b|a+b).unwrap_or(0);
+        result as usize
+    }
     pub fn get_cell(&self, pos: &CellPos) -> CellData {
         self.cells[pos.x][pos.y].clone()
     }
@@ -133,32 +155,32 @@ impl GameBoardData {
         }
     }
     pub fn get_surround_cells(&self, pos: &CellPos) -> Vec<CellData> {
-        let max_index = self.cells.len()-1;
+        let max_index = self.cells.len() - 1;
         let mut result: Vec<CellData> = vec![];
 
         if pos.x > 0 {
-            result.push(self.cells[pos.x-1][pos.y].clone());
+            result.push(self.cells[pos.x - 1][pos.y].clone());
             if pos.y > 0 {
-                result.push(self.cells[pos.x-1][pos.y-1].clone());
+                result.push(self.cells[pos.x - 1][pos.y - 1].clone());
             }
             if pos.y < max_index {
-                result.push(self.cells[pos.x-1][pos.y+1].clone());
+                result.push(self.cells[pos.x - 1][pos.y + 1].clone());
             }
         }
         if pos.x < max_index {
-            result.push(self.cells[pos.x+1][pos.y].clone());
+            result.push(self.cells[pos.x + 1][pos.y].clone());
             if pos.y > 0 {
-                result.push(self.cells[pos.x+1][pos.y-1].clone());
+                result.push(self.cells[pos.x + 1][pos.y - 1].clone());
             }
             if pos.y < max_index {
-                result.push(self.cells[pos.x+1][pos.y+1].clone());
+                result.push(self.cells[pos.x + 1][pos.y + 1].clone());
             }
         }
         if pos.y > 0 {
-            result.push(self.cells[pos.x][pos.y-1].clone());
+            result.push(self.cells[pos.x][pos.y - 1].clone());
         }
         if pos.y < max_index {
-            result.push(self.cells[pos.x][pos.y+1].clone());
+            result.push(self.cells[pos.x][pos.y + 1].clone());
         }
 
         result
@@ -180,6 +202,13 @@ pub struct RoundState {
     pub flags_placed: i16,
     pub board_data: GameBoardData,
     pub round_state_type: RoundStateType,
+    pub mines_remaining:usize,
+}
+
+impl RoundState {
+    pub fn update_round_state(&mut self) {
+        self.mines_remaining = self.total_mine - self.board_data.get_flag_count()
+    }
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
@@ -203,6 +232,7 @@ impl Default for RoundState {
             flags_placed: 0,
             board_data: GameBoardData::default(),
             round_state_type: RoundStateType::NotStarted,
+            mines_remaining:DEFAULT_MINE_AMOUNT,
         }
     }
 }
@@ -217,18 +247,9 @@ impl RoundState {
             board_data: crate::game_logic::generate_new_board(board_size, total_mine),
             start_time: 0,
             round_state_type: RoundStateType::NotStarted,
+            mines_remaining: total_mine,
         }
     }
-}
-
-pub enum OpenedCellState {
-    Empty,
-    CloseToMine(i8),
-    Mine,
-}
-pub enum CellState {
-    Closed,
-    Opened(OpenedCellState),
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq, Eq)]

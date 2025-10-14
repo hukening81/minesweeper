@@ -96,14 +96,14 @@ impl eframe::App for MineSweeper {
             style.spacing.window_margin = egui::Margin::ZERO;
             style.spacing.item_spacing = egui::Vec2::ZERO;
             style.visuals.window_stroke = egui::Stroke::NONE;
-            style.debug.show_widget_hits = true;
-            style.debug.debug_on_hover = true;
+            // style.debug.show_widget_hits = true;
+            // style.debug.debug_on_hover = true;
             style.spacing.interact_size = egui::Vec2::ZERO;
             style.spacing.indent = 0.0;
         });
 
         egui::CentralPanel::default()
-            .frame(egui::Frame::NONE.fill(egui::Color32::DARK_GRAY))
+            .frame(egui::Frame::NONE.fill(egui::Color32::from_rgb(198, 198, 198)))
             .show(ctx, |ui| {
                 // // Resize Logic
                 let current_window_size = ui.available_size();

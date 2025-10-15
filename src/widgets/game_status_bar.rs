@@ -2,11 +2,11 @@ use std::time;
 
 use crate::data::RoundState;
 pub struct PassedTimeIndicator {
-    passed_time: chrono::TimeDelta,
+    passed_time: u32,
 }
 
 impl PassedTimeIndicator {
-    pub fn new(passed_time: chrono::TimeDelta) -> Self {
+    pub fn new(passed_time: u32) -> Self {
         Self { passed_time }
     }
 }
@@ -16,7 +16,7 @@ impl egui::Widget for PassedTimeIndicator {
         egui::Frame::NONE
             .fill(egui::Color32::WHITE)
             .show(ui, |ui| {
-                ui.label(format!("{}", self.passed_time.to_string()));
+                ui.label(format!("{}", self.passed_time));
             })
             .response
     }

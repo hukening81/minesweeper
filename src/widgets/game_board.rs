@@ -138,7 +138,8 @@ impl GameBoard<'_> {
             panic!("YOU HIT A MINE at ({},{})", pos.x, pos.y);
         } else {
             if !self.round_state.is_started {
-                self.round_state.is_started = true
+                self.round_state.is_started = true;
+                self.round_state.start_time = chrono::Utc::now().timestamp() as u32;
             }
 
             cell.render_state = CellRenderState::Revealed;

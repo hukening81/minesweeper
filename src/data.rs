@@ -1,4 +1,4 @@
-use chrono::{DateTime, Duration, TimeZone};
+use chrono::{DateTime, Duration, TimeZone, Timelike};
 
 use crate::constants::{DEFAULT_BOARD_SIZE, DEFAULT_MINE_AMOUNT};
 
@@ -205,9 +205,9 @@ impl Default for GameBoardData {
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
 pub struct RoundState {
     pub is_started: bool,
-    pub start_time: i64,
+    pub start_time: u32,
     #[serde(skip)]
-    pub time_passed: chrono::TimeDelta,
+    pub time_passed: u32,
     pub board_size: usize,
     pub total_mine: usize,
     pub flags_placed: i16,
@@ -221,7 +221,7 @@ impl RoundState {
         self.mines_remaining = self.total_mine - self.board_data.get_flag_count();
         if self.is_started {
             self.time_passed =
-                chrono::Utc::now() - chrono::DateTime::from_timestamp(self.start_time, 0).unwrap();
+                chrono::Utc::now().timestamp() as u32 - self.start_time;
         }
     }
 }
@@ -244,7 +244,7 @@ impl Default for RoundState {
             start_time: Default::default(),
             board_size: DEFAULT_BOARD_SIZE,
             total_mine: DEFAULT_MINE_AMOUNT,
-            time_passed: chrono::TimeDelta::zero(),
+            time_passed: 0,
             flags_placed: 0,
             board_data: GameBoardData::default(),
             round_state_type: RoundStateType::NotStarted,
@@ -262,7 +262,7 @@ impl RoundState {
             flags_placed: 0,
             board_data: crate::game_logic::generate_new_board(board_size, total_mine),
             start_time: 0,
-            time_passed: chrono::TimeDelta::zero(),
+            time_passed: 0,
             round_state_type: RoundStateType::NotStarted,
             mines_remaining: total_mine,
         }

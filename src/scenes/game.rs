@@ -37,7 +37,7 @@ impl Widget for GameScene<'_> {
             .show(ui, |ui| {
                 ui.put(
                     status_bar_rect,
-                    GameStatusBar::new(&self.round_state, status_bar_rect),
+                    GameStatusBar::new(self.round_state, status_bar_rect),
                 );
                 ui.put(
                     game_board_rect,

@@ -1,4 +1,4 @@
-use chrono::{DateTime, Duration, TimeZone, Timelike};
+use chrono::{DateTime, TimeZone as _};
 
 use crate::constants::{DEFAULT_BOARD_SIZE, DEFAULT_MINE_AMOUNT};
 
@@ -123,7 +123,7 @@ impl GameBoardData {
             .iter()
             .map(|it| {
                 it.iter()
-                    .map(|it| if it.is_flagged { 1 } else { 0 })
+                    .map(|it| i32::from(it.is_flagged))
                     .reduce(|a, b| a + b)
                     .unwrap_or(0)
             })
@@ -138,11 +138,7 @@ impl GameBoardData {
             .map(|it| {
                 it.iter()
                     .map(|it| {
-                        if it.render_state == CellRenderState::Covered {
-                            1
-                        } else {
-                            0
-                        }
+                        i32::from(it.render_state == CellRenderState::Covered)
                     })
                     .reduce(|a, b| a + b)
                     .unwrap_or(0)
@@ -230,7 +226,7 @@ impl RoundState {
     }
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
+#[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq, Eq)]
 pub enum RoundEndingType {
     ClickedMine(CellPos),
     Victory,

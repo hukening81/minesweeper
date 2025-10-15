@@ -1,4 +1,3 @@
-use std::time;
 
 use crate::data::RoundState;
 pub struct PassedTimeIndicator {
@@ -53,7 +52,7 @@ impl<'a> GameStatusBar<'a> {
         Self { round_state, rect }
     }
 }
-impl<'a> egui::Widget for GameStatusBar<'a> {
+impl egui::Widget for GameStatusBar<'_> {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let box_height = self.rect.height() * 0.8;
         let box_width = box_height * 1.5;

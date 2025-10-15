@@ -1,6 +1,12 @@
 pub struct FunctionPanel {
 }
 
+impl Default for FunctionPanel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FunctionPanel{
     pub fn new() -> Self {
         Self{}

@@ -21,12 +21,12 @@ impl Cell {
         }
     }
     fn get_revealed_image_source(&self) -> egui::ImageSource {
-        return if self.data.is_mine {
+        if self.data.is_mine {
             self.image_source.mine_block.clone()
         } else {
             self.image_source
                 .get_num_image_source(self.data.nearby_mines)
-        };
+        }
     }
 }
 

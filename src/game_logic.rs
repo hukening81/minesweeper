@@ -52,11 +52,11 @@ pub fn generate_new_board(board_size: usize, total_mine: usize) -> GameBoardData
             }
         }
     }
-    let board_data = GameBoardData {
-        cells: result,
-        last_click: None,
-    };
+    
     // board_data.show_mine_location();
     // board_data.show_game_board();
-    board_data
+    GameBoardData {
+        cells: result,
+        last_click: None,
+    }
 }

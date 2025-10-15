@@ -15,7 +15,6 @@ impl Cell {
 
 impl egui::Widget for Cell {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        
         match self.data.render_state {
             CellRenderState::Revealed => ui.image(
                 self.image_source
@@ -34,17 +33,12 @@ impl egui::Widget for Cell {
     }
 }
 pub struct GameBoard<'a> {
-    render_origin: egui::Pos2,
-    size: f32,
     round_state: &'a mut RoundState,
+    rect: egui::Rect,
 }
 impl<'a> GameBoard<'a> {
-    pub fn new(render_origin: egui::Pos2, size: f32, round_state: &'a mut RoundState) -> Self {
-        Self {
-            render_origin,
-            size,
-            round_state,
-        }
+    pub fn new(round_state: &'a mut RoundState, rect: egui::Rect) -> Self {
+        Self { round_state, rect }
     }
 }
 impl egui::Widget for GameBoard<'_> {
@@ -55,8 +49,8 @@ impl egui::Widget for GameBoard<'_> {
             ui.data(|d| d.get_temp(egui::Id::new("IMAGE_SOURCE")).unwrap());
 
         let cell_size = egui::vec2(
-            self.size / self.round_state.board_size as f32,
-            self.size / self.round_state.board_size as f32,
+            self.rect.width() / self.round_state.board_size as f32,
+            self.rect.width() / self.round_state.board_size as f32,
         );
 
         egui::Grid::new("GameBoard")
@@ -75,8 +69,8 @@ impl egui::Widget for GameBoard<'_> {
                         let response = ui.interact(
                             egui::Rect::from_min_size(
                                 egui::pos2(
-                                    self.render_origin.x + cell_size.x * k as f32,
-                                    self.render_origin.y + cell_size.y * j as f32,
+                                    self.rect.min.x + cell_size.x * k as f32,
+                                    self.rect.min.y + cell_size.y * j as f32,
                                 ),
                                 cell_size,
                             ),
@@ -119,10 +113,8 @@ impl GameBoard<'_> {
                             < chrono::TimeDelta::milliseconds(250)
                         && origin_cell.nearby_mines > 0
                     {
-                        let surround_cells = self
-                            .round_state
-                            .board_data
-                            .get_surround_cells(pos).clone();
+                        let surround_cells =
+                            self.round_state.board_data.get_surround_cells(pos).clone();
                         if origin_cell.nearby_mines
                             == surround_cells.iter().filter(|it| it.is_flagged).count() as u8
                         {
@@ -145,25 +137,23 @@ impl GameBoard<'_> {
         if cell.is_mine {
             panic!("YOU HIT A MINE at ({},{})", pos.x, pos.y);
         } else {
+            if !self.round_state.is_started {
+                self.round_state.is_started = true
+            }
+
             cell.render_state = CellRenderState::Revealed;
-            self.round_state
-                .board_data
-                .update_cells(vec![cell.clone()]);
+            self.round_state.board_data.update_cells(vec![cell.clone()]);
             if cell.nearby_mines == 0 {
                 self.reveal_nearby_cell(pos);
             }
         }
     }
     fn reveal_nearby_cell(&mut self, pos: &CellPos) {
-        let surround_cells = self
-            .round_state
-            .board_data
-            .get_surround_cells(pos).clone();
+        let surround_cells = self.round_state.board_data.get_surround_cells(pos).clone();
         for it in &surround_cells {
             if !it.is_flagged {
                 self.reveal_cell(&it.position);
             }
         }
     }
-
 }

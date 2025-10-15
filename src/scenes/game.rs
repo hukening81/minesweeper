@@ -5,24 +5,12 @@ use crate::{
     widgets::{GameBoard, GameStatusBar},
 };
 pub struct GameScene<'a> {
-    render_origin: egui::Pos2,
-    width: f32,
-    height: f32,
+    rect: egui::Rect,
     round_state: &'a mut RoundState,
 }
 impl<'a> GameScene<'a> {
-    pub fn new(
-        render_origin: egui::Pos2,
-        width: f32,
-        height: f32,
-        round_state: &'a mut RoundState,
-    ) -> Self {
-        Self {
-            render_origin,
-            width,
-            height,
-            round_state,
-        }
+    pub fn new(rect: egui::Rect, round_state: &'a mut RoundState) -> Self {
+        Self { rect, round_state }
     }
 }
 
@@ -30,29 +18,30 @@ impl Widget for GameScene<'_> {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let global_state: crate::data::GlobalState =
             ui.data(|d| d.get_temp(egui::Id::NULL)).unwrap();
+        self.round_state.update_round_state();
+
+        let status_bar_rect = egui::Rect::from_min_size(
+            self.rect.min,
+            egui::vec2(self.rect.width(), self.rect.height() - self.rect.width()),
+        );
+
+        let game_board_rect = egui::Rect::from_min_size(
+            egui::pos2(
+                self.rect.min.x,
+                self.rect.min.y + (self.rect.height() - self.rect.width()),
+            ),
+            self.rect.size(),
+        );
 
         egui::Frame::NONE
             .show(ui, |ui| {
                 ui.put(
-                    egui::Rect::from_min_size(
-                        self.render_origin,
-                        egui::vec2(self.width, self.height - self.width),
-                    ),
-                    GameStatusBar::new(self.round_state.clone()),
+                    status_bar_rect,
+                    GameStatusBar::new(&self.round_state, status_bar_rect),
                 );
                 ui.put(
-                    egui::Rect::from_min_size(
-                        egui::pos2(
-                            self.render_origin.x,
-                            self.render_origin.y + (self.height - self.width),
-                        ),
-                        egui::vec2(self.width, self.width),
-                    ),
-                    GameBoard::new(
-                        egui::pos2(self.render_origin.x, self.height - self.width),
-                        self.width,
-                        self.round_state,
-                    ),
+                    game_board_rect,
+                    GameBoard::new(self.round_state, game_board_rect),
                 )
             })
             .response

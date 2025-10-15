@@ -41,7 +41,7 @@ impl Default for GameImageSource {
             empty_block: egui::include_image!("../assets/game/empty.png"),
             mine_block: egui::include_image!("../assets/game/mine.png"),
             mine_exploded: egui::include_image!("../assets/game/mine_exploded.png"),
-            flagged:egui::include_image!("../assets/game/flag.png"),
+            flagged: egui::include_image!("../assets/game/flag.png"),
             num1: egui::include_image!("../assets/game/num1.png"),
             num2: egui::include_image!("../assets/game/num2.png"),
             num3: egui::include_image!("../assets/game/num3.png"),
@@ -64,7 +64,6 @@ pub struct MineSweeper {
     #[serde(skip)]
     image_sources: GameImageSource,
 }
-
 
 impl MineSweeper {
     /// Called once before the first frame.
@@ -146,40 +145,36 @@ impl eframe::App for MineSweeper {
                         - self.global_state.layout_state.scene_panel_height;
                 self.global_state.layout_state.global_x_padding = padding_size;
 
+                let main_scene_rect = egui::Rect::from_min_size(
+                    egui::pos2(padding_size, 0.0),
+                    egui::vec2(
+                        self.global_state.content_size.0,
+                        self.global_state.layout_state.scene_panel_height,
+                    ),
+                );
+
+                let function_panel_rect = egui::Rect::from_min_size(
+                    egui::pos2(
+                        padding_size,
+                        self.global_state.layout_state.scene_panel_height,
+                    ),
+                    egui::vec2(
+                        self.global_state.content_size.0,
+                        self.global_state.content_size.1,
+                    ),
+                );
+
                 egui::CentralPanel::default()
                     .frame(egui::Frame::NONE)
                     .show(ctx, |ui| {
-                        let scene = crate::scenes::GameScene::new(
-                            egui::pos2(padding_size, 0.0),
-                            self.global_state.content_size.0,
-                            self.global_state.layout_state.scene_panel_height,
-                            &mut self.round_state,
-                        );
-                        ui.put(
-                            egui::Rect::from_min_size(
-                                egui::pos2(padding_size, 0.0),
-                                egui::vec2(
-                                    self.global_state.content_size.0,
-                                    self.global_state.layout_state.scene_panel_height,
-                                ),
-                            ),
-                            scene,
-                        );
+                        let scene =
+                            crate::scenes::GameScene::new(main_scene_rect, &mut self.round_state);
+                        ui.put(main_scene_rect, scene);
+
                         let function_panel = crate::widgets::FunctionPanel::new();
-                        ui.put(
-                            egui::Rect::from_min_size(
-                                egui::pos2(
-                                    padding_size,
-                                    self.global_state.layout_state.scene_panel_height,
-                                ),
-                                egui::vec2(
-                                    self.global_state.content_size.0,
-                                    self.global_state.content_size.1,
-                                ),
-                            ),
-                            function_panel,
-                        );
+                        ui.put(function_panel_rect, function_panel);
                     })
             });
+            ctx.request_repaint();
     }
 }

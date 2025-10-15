@@ -1,5 +1,4 @@
-use chrono::DateTime;
-use egui::TopBottomPanel;
+use chrono::{DateTime, Duration, TimeZone};
 
 use crate::constants::{DEFAULT_BOARD_SIZE, DEFAULT_MINE_AMOUNT};
 
@@ -120,27 +119,37 @@ impl GameBoardData {
         println!("{text}");
     }
     pub fn get_flag_count(&self) -> usize {
-         let result = self.cells.iter().map(|it| {
-            it.iter().map(|it| {
-                if it.is_flagged {
-                    1
-                } else {
-                    0
-                }
-            }).reduce(|a,b|a+b).unwrap_or(0)
-        }).reduce(|a,b|a+b).unwrap_or(0);
+        let result = self
+            .cells
+            .iter()
+            .map(|it| {
+                it.iter()
+                    .map(|it| if it.is_flagged { 1 } else { 0 })
+                    .reduce(|a, b| a + b)
+                    .unwrap_or(0)
+            })
+            .reduce(|a, b| a + b)
+            .unwrap_or(0);
         result as usize
     }
     pub fn get_remain_cell_count(&self) -> usize {
-        let result = self.cells.iter().map(|it| {
-            it.iter().map(|it| {
-                if it.render_state == CellRenderState::Covered {
-                    1
-                } else {
-                    0
-                }
-            }).reduce(|a,b|a+b).unwrap_or(0)
-        }).reduce(|a,b|a+b).unwrap_or(0);
+        let result = self
+            .cells
+            .iter()
+            .map(|it| {
+                it.iter()
+                    .map(|it| {
+                        if it.render_state == CellRenderState::Covered {
+                            1
+                        } else {
+                            0
+                        }
+                    })
+                    .reduce(|a, b| a + b)
+                    .unwrap_or(0)
+            })
+            .reduce(|a, b| a + b)
+            .unwrap_or(0);
         result as usize
     }
     pub fn get_cell(&self, pos: &CellPos) -> CellData {
@@ -196,18 +205,24 @@ impl Default for GameBoardData {
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
 pub struct RoundState {
     pub is_started: bool,
-    pub start_time: u16,
+    pub start_time: i64,
+    #[serde(skip)]
+    pub time_passed: chrono::TimeDelta,
     pub board_size: usize,
     pub total_mine: usize,
     pub flags_placed: i16,
     pub board_data: GameBoardData,
     pub round_state_type: RoundStateType,
-    pub mines_remaining:usize,
+    pub mines_remaining: usize,
 }
 
 impl RoundState {
     pub fn update_round_state(&mut self) {
-        self.mines_remaining = self.total_mine - self.board_data.get_flag_count()
+        self.mines_remaining = self.total_mine - self.board_data.get_flag_count();
+        if self.is_started {
+            self.time_passed =
+                chrono::Utc::now() - chrono::DateTime::from_timestamp(self.start_time, 0).unwrap();
+        }
     }
 }
 
@@ -229,10 +244,11 @@ impl Default for RoundState {
             start_time: Default::default(),
             board_size: DEFAULT_BOARD_SIZE,
             total_mine: DEFAULT_MINE_AMOUNT,
+            time_passed: chrono::TimeDelta::zero(),
             flags_placed: 0,
             board_data: GameBoardData::default(),
             round_state_type: RoundStateType::NotStarted,
-            mines_remaining:DEFAULT_MINE_AMOUNT,
+            mines_remaining: DEFAULT_MINE_AMOUNT,
         }
     }
 }
@@ -246,6 +262,7 @@ impl RoundState {
             flags_placed: 0,
             board_data: crate::game_logic::generate_new_board(board_size, total_mine),
             start_time: 0,
+            time_passed: chrono::TimeDelta::zero(),
             round_state_type: RoundStateType::NotStarted,
             mines_remaining: total_mine,
         }

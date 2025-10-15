@@ -53,7 +53,6 @@ impl Default for GlobalState {
 pub enum CellRenderState {
     Covered,
     Revealed,
-    GameEnded(bool),
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
@@ -204,7 +203,6 @@ impl Default for GameBoardData {
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
 pub struct RoundState {
-    pub is_started: bool,
     pub start_time: u32,
     #[serde(skip)]
     pub time_passed: u32,
@@ -219,28 +217,34 @@ pub struct RoundState {
 impl RoundState {
     pub fn update_round_state(&mut self) {
         self.mines_remaining = self.total_mine - self.board_data.get_flag_count();
-        if self.is_started {
-            self.time_passed =
-                chrono::Utc::now().timestamp() as u32 - self.start_time;
+        match &mut self.round_state_type {
+            RoundStateType::NotStarted => {}
+            RoundStateType::Playing => {
+                self.time_passed = chrono::Utc::now().timestamp() as u32 - self.start_time;
+                if self.mines_remaining <= 0 {
+                    self.round_state_type = RoundStateType::Ended(RoundEndingType::Victory);
+                }
+            }
+            RoundStateType::Ended(round_ending_type) => {}
         }
     }
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
+#[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
 pub enum RoundEndingType {
-    Defeated,
+    ClickedMine(CellPos),
     Victory,
 }
-#[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
+#[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
 pub enum RoundStateType {
     NotStarted,
     Playing,
     Ended(RoundEndingType),
 }
+
 impl Default for RoundState {
     fn default() -> Self {
         Self {
-            is_started: Default::default(),
             start_time: Default::default(),
             board_size: DEFAULT_BOARD_SIZE,
             total_mine: DEFAULT_MINE_AMOUNT,
@@ -256,7 +260,6 @@ impl Default for RoundState {
 impl RoundState {
     pub fn new(board_size: usize, total_mine: usize) -> Self {
         Self {
-            is_started: false,
             board_size,
             total_mine,
             flags_placed: 0,

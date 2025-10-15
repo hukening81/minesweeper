@@ -80,6 +80,7 @@ impl MineSweeper {
         // }
         Default::default()
     }
+    pub fn stop_game() {}
 }
 
 impl eframe::App for MineSweeper {
@@ -101,20 +102,21 @@ impl eframe::App for MineSweeper {
             style.spacing.indent = 0.0;
         });
 
+        // Insert nessecery data for nested UI to render
+        ctx.data_mut(|d| d.insert_temp(egui::Id::NULL, self.global_state.clone()));
+        ctx.data_mut(|d| {
+            d.insert_temp(egui::Id::new("IMAGE_SOURCE"), self.image_sources.clone());
+        });
+
         egui::CentralPanel::default()
             .frame(egui::Frame::NONE.fill(egui::Color32::from_rgb(198, 198, 198)))
             .show(ctx, |ui| {
                 // // Resize Logic
                 let current_window_size = ui.available_size();
-                // println!("current_window_size {:?}", current_window_size);
                 let last_window_size = egui::vec2(
                     self.global_state.window_size.0,
                     self.global_state.window_size.1,
                 );
-                // // println!(
-                // //     "last_window_size:{:?} --- current_window_size:{:?}",
-                // //     last_window_size, current_window_size
-                // // );
                 if current_window_size != last_window_size {
                     self.global_state.content_size =
                         crate::utils::calculate_content_display_size(current_window_size);
@@ -124,11 +126,7 @@ impl eframe::App for MineSweeper {
                     )));
                     self.global_state.window_size = (current_window_size.x, current_window_size.y);
                 }
-                // Insert nessecery data for nested UI to render
-                ui.data_mut(|d| d.insert_temp(egui::Id::NULL, self.global_state.clone()));
-                ui.data_mut(|d| {
-                    d.insert_temp(egui::Id::new("IMAGE_SOURCE"), self.image_sources.clone());
-                });
+
                 debug!("{:?}", self.global_state);
 
                 // Padding two side panels
@@ -167,14 +165,26 @@ impl eframe::App for MineSweeper {
                 egui::CentralPanel::default()
                     .frame(egui::Frame::NONE)
                     .show(ctx, |ui| {
-                        let scene =
-                            crate::scenes::GameScene::new(main_scene_rect, &mut self.round_state);
-                        ui.put(main_scene_rect, scene);
-
+                        let main_scene = match &self.round_state.round_state_type {
+                            crate::data::RoundStateType::NotStarted
+                            | crate::data::RoundStateType::Playing => {
+                                crate::scenes::GameScene::new(
+                                    main_scene_rect,
+                                    &mut self.round_state,
+                                )
+                            }
+                            crate::data::RoundStateType::Ended(round_ending_type) => {
+                                crate::scenes::GameScene::new(
+                                    main_scene_rect,
+                                    &mut self.round_state,
+                                )
+                            }
+                        };
+                        let main_scene = ui.put(main_scene_rect, main_scene);
                         let function_panel = crate::widgets::FunctionPanel::new();
                         ui.put(function_panel_rect, function_panel);
                     })
             });
-            ctx.request_repaint();
+        ctx.request_repaint();
     }
 }

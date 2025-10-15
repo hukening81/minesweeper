@@ -1,34 +1,60 @@
 use crate::{
     app::GameImageSource,
-    data::{CellData, CellPos, CellRenderState, RoundState},
+    data::{CellData, CellPos, CellRenderState, RoundState, RoundStateType},
 };
 
 pub struct Cell {
     data: CellData,
+    round_state_type: RoundStateType,
     image_source: GameImageSource,
 }
 impl Cell {
-    fn new(data: CellData, image_source: GameImageSource) -> Self {
-        Self { data, image_source }
+    fn new(
+        data: CellData,
+        round_state_type: RoundStateType,
+        image_source: GameImageSource,
+    ) -> Self {
+        Self {
+            data,
+            round_state_type,
+            image_source,
+        }
+    }
+    fn get_revealed_image_source(&self) -> egui::ImageSource {
+        return if self.data.is_mine {
+            self.image_source.mine_block.clone()
+        } else {
+            self.image_source
+                .get_num_image_source(self.data.nearby_mines)
+        };
     }
 }
 
 impl egui::Widget for Cell {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        match self.data.render_state {
-            CellRenderState::Revealed => ui.image(
-                self.image_source
-                    .get_num_image_source(self.data.nearby_mines),
-            ),
-            CellRenderState::Covered => {
-                if self.data.is_flagged {
-                    ui.image(self.image_source.flagged)
-                } else {
-                    ui.image(self.image_source.normal_block)
+        let revealed_image_source = self.get_revealed_image_source();
+        match &self.round_state_type {
+            RoundStateType::NotStarted => ui.image(self.image_source.normal_block),
+            RoundStateType::Playing => match self.data.render_state {
+                CellRenderState::Revealed => ui.image(revealed_image_source.clone()),
+                CellRenderState::Covered => {
+                    if self.data.is_flagged {
+                        ui.image(self.image_source.flagged)
+                    } else {
+                        ui.image(self.image_source.normal_block)
+                    }
                 }
-            }
-            CellRenderState::GameEnded(true) => ui.image(self.image_source.mine_block),
-            CellRenderState::GameEnded(false) => ui.image(self.image_source.mine_exploded),
+            },
+            RoundStateType::Ended(round_ending_type) => match round_ending_type.clone() {
+                crate::data::RoundEndingType::ClickedMine(cell_pos) => {
+                    if cell_pos == self.data.position {
+                        ui.image(self.image_source.mine_exploded)
+                    } else {
+                        ui.image(self.image_source.mine_block)
+                    }
+                }
+                crate::data::RoundEndingType::Victory => ui.image(revealed_image_source),
+            },
         }
     }
 }
@@ -62,6 +88,7 @@ impl egui::Widget for GameBoard<'_> {
                             cell_size,
                             Cell::new(
                                 self.round_state.board_data.cells[j][k].clone(),
+                                self.round_state.round_state_type.clone(),
                                 image_source.clone(),
                             ),
                             // egui::Label::new(format!("({},{})",j,k))
@@ -123,7 +150,6 @@ impl GameBoard<'_> {
                     }
                 }
             }
-            CellRenderState::GameEnded(_) => {}
         }
         self.round_state.board_data.last_click = Some((pos.clone(), chrono::Utc::now()));
     }
@@ -135,11 +161,13 @@ impl GameBoard<'_> {
         }
 
         if cell.is_mine {
-            panic!("YOU HIT A MINE at ({},{})", pos.x, pos.y);
+            self.round_state.round_state_type = crate::data::RoundStateType::Ended(
+                crate::data::RoundEndingType::ClickedMine(pos.clone()),
+            );
         } else {
-            if !self.round_state.is_started {
-                self.round_state.is_started = true;
+            if self.round_state.round_state_type == RoundStateType::NotStarted {
                 self.round_state.start_time = chrono::Utc::now().timestamp() as u32;
+                self.round_state.round_state_type = RoundStateType::Playing;
             }
 
             cell.render_state = CellRenderState::Revealed;

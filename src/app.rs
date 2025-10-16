@@ -13,22 +13,7 @@ pub struct GameImageSource {
     pub cell_mine: egui::ImageSource<'static>,
     pub cell_mine_red: egui::ImageSource<'static>,
 }
-impl GameImageSource {
-    // pub fn get_num_image_source(&self, num: u8) -> ImageSource {
-    //     match num {
-    //         0 => self.cell_0.clone(),
-    //         1 => self.cell_1.clone(),
-    //         2 => self.cell_2.clone(),
-    //         3 => self.cell_3.clone(),
-    //         4 => self.cell_4.clone(),
-    //         5 => self.cell_5.clone(),
-    //         6 => self.cell_6.clone(),
-    //         7 => self.cell_7.clone(),
-    //         8 => self.cell_8.clone(),
-    //         _ => panic!("Out of range"),
-    //     }
-    // }
-}
+impl GameImageSource {}
 impl Default for GameImageSource {
     fn default() -> Self {
         let mut cell_num = vec![];

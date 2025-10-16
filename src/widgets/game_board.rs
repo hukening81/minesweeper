@@ -1,6 +1,6 @@
 use crate::{
     app::GameImageSource,
-    data::{CellData, CellPos, CellRenderState, RoundData, RoundEndingType, RoundState},
+    data::{CellData, CellPos, CellRenderState, RoundData, RoundState},
 };
 
 pub struct Cell {
@@ -47,7 +47,11 @@ impl egui::Widget for Cell {
                     }
                 }
                 crate::data::RoundEndingType::Victory => {
-                    ui.image(self.image_source.cell_num[self.data.nearby_mines].clone())
+                    if self.data.is_mine {
+                        ui.image(self.image_source.cell_mine)
+                    } else {
+                        ui.image(self.image_source.cell_num[self.data.nearby_mines].clone())
+                    }
                 }
             },
         }

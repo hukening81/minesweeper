@@ -1,19 +1,15 @@
 use crate::{
     app::GameImageSource,
-    data::{CellData, CellPos, CellRenderState, RoundState, RoundStateType},
+    data::{CellData, CellPos, CellRenderState, RoundData, RoundState},
 };
 
 pub struct Cell {
     data: CellData,
-    round_state_type: RoundStateType,
+    round_state_type: RoundState,
     image_source: GameImageSource,
 }
 impl Cell {
-    fn new(
-        data: CellData,
-        round_state_type: RoundStateType,
-        image_source: GameImageSource,
-    ) -> Self {
+    fn new(data: CellData, round_state_type: RoundState, image_source: GameImageSource) -> Self {
         Self {
             data,
             round_state_type,
@@ -34,8 +30,8 @@ impl egui::Widget for Cell {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let revealed_image_source = self.get_revealed_image_source();
         match &self.round_state_type {
-            RoundStateType::NotStarted => ui.image(self.image_source.normal_block),
-            RoundStateType::Playing => match self.data.render_state {
+            RoundState::NotStarted => ui.image(self.image_source.normal_block),
+            RoundState::Playing => match self.data.render_state {
                 CellRenderState::Revealed => ui.image(revealed_image_source.clone()),
                 CellRenderState::Covered => {
                     if self.data.is_flagged {
@@ -45,12 +41,16 @@ impl egui::Widget for Cell {
                     }
                 }
             },
-            RoundStateType::Ended(round_ending_type) => match round_ending_type.clone() {
+            RoundState::Ended(round_ending_type) => match round_ending_type.clone() {
                 crate::data::RoundEndingType::ClickedMine(cell_pos) => {
-                    if cell_pos == self.data.position {
-                        ui.image(self.image_source.mine_exploded)
+                    if !self.data.is_mine {
+                        ui.image(revealed_image_source)
                     } else {
-                        ui.image(self.image_source.mine_block)
+                        if cell_pos == self.data.position {
+                            ui.image(self.image_source.mine_exploded)
+                        } else {
+                            ui.image(self.image_source.mine_block)
+                        }
                     }
                 }
                 crate::data::RoundEndingType::Victory => ui.image(revealed_image_source),
@@ -59,11 +59,11 @@ impl egui::Widget for Cell {
     }
 }
 pub struct GameBoard<'a> {
-    round_state: &'a mut RoundState,
+    round_state: &'a mut RoundData,
     rect: egui::Rect,
 }
 impl<'a> GameBoard<'a> {
-    pub fn new(round_state: &'a mut RoundState, rect: egui::Rect) -> Self {
+    pub fn new(round_state: &'a mut RoundData, rect: egui::Rect) -> Self {
         Self { round_state, rect }
     }
 }
@@ -161,13 +161,13 @@ impl GameBoard<'_> {
         }
 
         if cell.is_mine {
-            self.round_state.round_state_type = crate::data::RoundStateType::Ended(
+            self.round_state.round_state_type = crate::data::RoundState::Ended(
                 crate::data::RoundEndingType::ClickedMine(pos.clone()),
             );
         } else {
-            if self.round_state.round_state_type == RoundStateType::NotStarted {
+            if self.round_state.round_state_type == RoundState::NotStarted {
                 self.round_state.start_time = chrono::Utc::now().timestamp() as u32;
-                self.round_state.round_state_type = RoundStateType::Playing;
+                self.round_state.round_state_type = RoundState::Playing;
             }
 
             cell.render_state = CellRenderState::Revealed;

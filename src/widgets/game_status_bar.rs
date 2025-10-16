@@ -1,5 +1,5 @@
 
-use crate::data::RoundState;
+use crate::data::RoundData;
 pub struct PassedTimeIndicator {
     passed_time: u32,
 }
@@ -43,12 +43,12 @@ impl egui::Widget for RemainMineIndicator {
 }
 
 pub struct GameStatusBar<'a> {
-    round_state: &'a RoundState,
+    round_state: &'a RoundData,
     rect: egui::Rect,
 }
 
 impl<'a> GameStatusBar<'a> {
-    pub fn new(round_state: &'a RoundState, rect: egui::Rect) -> Self {
+    pub fn new(round_state: &'a RoundData, rect: egui::Rect) -> Self {
         Self { round_state, rect }
     }
 }

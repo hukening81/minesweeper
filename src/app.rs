@@ -1,4 +1,4 @@
-use crate::data::{GlobalState, RoundState};
+use crate::data::{GlobalState, RoundData};
 use egui::ImageSource;
 use log::debug;
 
@@ -60,7 +60,7 @@ impl Default for GameImageSource {
 #[derive(Default)]
 pub struct MineSweeper {
     global_state: GlobalState,
-    round_state: RoundState,
+    round: RoundData,
     #[serde(skip)]
     image_sources: GameImageSource,
 }
@@ -165,19 +165,13 @@ impl eframe::App for MineSweeper {
                 egui::CentralPanel::default()
                     .frame(egui::Frame::NONE)
                     .show(ctx, |ui| {
-                        let main_scene = match &self.round_state.round_state_type {
-                            crate::data::RoundStateType::NotStarted
-                            | crate::data::RoundStateType::Playing => {
-                                crate::scenes::GameScene::new(
-                                    main_scene_rect,
-                                    &mut self.round_state,
-                                )
+                        let main_scene = match &self.round.round_state_type {
+                            crate::data::RoundState::NotStarted
+                            | crate::data::RoundState::Playing => {
+                                crate::scenes::GameScene::new(main_scene_rect, &mut self.round)
                             }
-                            crate::data::RoundStateType::Ended(round_ending_type) => {
-                                crate::scenes::GameScene::new(
-                                    main_scene_rect,
-                                    &mut self.round_state,
-                                )
+                            crate::data::RoundState::Ended(round_ending_type) => {
+                                crate::scenes::GameScene::new(main_scene_rect, &mut self.round)
                             }
                         };
                         let main_scene = ui.put(main_scene_rect, main_scene);

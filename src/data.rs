@@ -7,6 +7,7 @@ pub struct GameSettings {
     pub board_size: i16,
     pub total_mines: i16,
 }
+
 impl Default for GameSettings {
     fn default() -> Self {
         Self {
@@ -32,10 +33,14 @@ pub struct GlobalState {
     pub layout_state: LayoutState,
 }
 
+impl GlobalState {
+    pub fn change_scene() {}
+}
+
 impl Default for GlobalState {
     fn default() -> Self {
         Self {
-            current_scene: crate::scenes::SceneType::GameScene,
+            current_scene: crate::scenes::SceneType::Game,
             game_settings: Default::default(),
             // round_state: RoundState::default(),
             window_size: (400.0, 500.0),
@@ -63,6 +68,7 @@ pub struct CellData {
     pub nearby_mines: u8,
     pub render_state: CellRenderState,
 }
+
 impl Default for CellData {
     fn default() -> Self {
         Self {
@@ -80,6 +86,7 @@ pub struct GameBoardData {
     pub last_click: Option<(CellPos, DateTime<chrono::Utc>)>,
     pub cells: Vec<Vec<CellData>>,
 }
+
 impl GameBoardData {
     pub fn show_mine_location(&self) {
         let mut text = String::new();
@@ -137,9 +144,7 @@ impl GameBoardData {
             .iter()
             .map(|it| {
                 it.iter()
-                    .map(|it| {
-                        i32::from(it.render_state == CellRenderState::Covered)
-                    })
+                    .map(|it| i32::from(it.render_state == CellRenderState::Covered))
                     .reduce(|a, b| a + b)
                     .unwrap_or(0)
             })
@@ -198,7 +203,7 @@ impl Default for GameBoardData {
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
-pub struct RoundState {
+pub struct RoundData {
     pub start_time: u32,
     #[serde(skip)]
     pub time_passed: u32,
@@ -206,22 +211,22 @@ pub struct RoundState {
     pub total_mine: usize,
     pub flags_placed: i16,
     pub board_data: GameBoardData,
-    pub round_state_type: RoundStateType,
+    pub round_state_type: RoundState,
     pub mines_remaining: usize,
 }
 
-impl RoundState {
+impl RoundData {
     pub fn update_round_state(&mut self) {
         self.mines_remaining = self.total_mine - self.board_data.get_flag_count();
         match &mut self.round_state_type {
-            RoundStateType::NotStarted => {}
-            RoundStateType::Playing => {
+            RoundState::NotStarted => {}
+            RoundState::Playing => {
                 self.time_passed = chrono::Utc::now().timestamp() as u32 - self.start_time;
                 if self.mines_remaining <= 0 {
-                    self.round_state_type = RoundStateType::Ended(RoundEndingType::Victory);
+                    self.round_state_type = RoundState::Ended(RoundEndingType::Victory);
                 }
             }
-            RoundStateType::Ended(round_ending_type) => {}
+            RoundState::Ended(round_ending_type) => {}
         }
     }
 }
@@ -232,13 +237,13 @@ pub enum RoundEndingType {
     Victory,
 }
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
-pub enum RoundStateType {
+pub enum RoundState {
     NotStarted,
     Playing,
     Ended(RoundEndingType),
 }
 
-impl Default for RoundState {
+impl Default for RoundData {
     fn default() -> Self {
         Self {
             start_time: Default::default(),
@@ -247,13 +252,13 @@ impl Default for RoundState {
             time_passed: 0,
             flags_placed: 0,
             board_data: GameBoardData::default(),
-            round_state_type: RoundStateType::NotStarted,
+            round_state_type: RoundState::NotStarted,
             mines_remaining: DEFAULT_MINE_AMOUNT,
         }
     }
 }
 
-impl RoundState {
+impl RoundData {
     pub fn new(board_size: usize, total_mine: usize) -> Self {
         Self {
             board_size,
@@ -262,7 +267,7 @@ impl RoundState {
             board_data: crate::game_logic::generate_new_board(board_size, total_mine),
             start_time: 0,
             time_passed: 0,
-            round_state_type: RoundStateType::NotStarted,
+            round_state_type: RoundState::NotStarted,
             mines_remaining: total_mine,
         }
     }
@@ -273,6 +278,7 @@ pub struct CellPos {
     pub x: usize,
     pub y: usize,
 }
+
 impl CellPos {
     pub fn new(x: usize, y: usize) -> Self {
         Self { x, y }

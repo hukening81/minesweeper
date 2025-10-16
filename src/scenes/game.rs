@@ -1,15 +1,15 @@
 use egui::Widget;
 
 use crate::{
-    data::RoundState,
+    data::RoundData,
     widgets::{GameBoard, GameStatusBar},
 };
 pub struct GameScene<'a> {
     rect: egui::Rect,
-    round_state: &'a mut RoundState,
+    round_state: &'a mut RoundData,
 }
 impl<'a> GameScene<'a> {
-    pub fn new(rect: egui::Rect, round_state: &'a mut RoundState) -> Self {
+    pub fn new(rect: egui::Rect, round_state: &'a mut RoundData) -> Self {
         Self { rect, round_state }
     }
 }

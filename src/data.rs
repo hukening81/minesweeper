@@ -232,7 +232,7 @@ impl RoundData {
     pub fn solve_for_me(&mut self) {
         for ele in &mut self.board_data.cells {
             for ele in ele {
-                ele.is_flagged = ele.is_mine
+                ele.is_flagged = ele.is_mine;
             }
         }
     }
@@ -243,7 +243,7 @@ pub enum RoundEndingType {
     ClickedMine(CellPos),
     Victory,
 }
-#[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
+#[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq, Eq)]
 pub enum RoundState {
     NotStarted,
     Playing,

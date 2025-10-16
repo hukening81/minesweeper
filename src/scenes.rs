@@ -8,7 +8,3 @@ pub enum SceneType {
     RoomSetting,
     PlayerStanding,
 }
-
-pub fn get_scene_widget(scene_type: &SceneType) -> GameScene {
-    todo!()
-}

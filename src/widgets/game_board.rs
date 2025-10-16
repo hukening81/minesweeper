@@ -38,12 +38,10 @@ impl egui::Widget for Cell {
                 crate::data::RoundEndingType::ClickedMine(cell_pos) => {
                     if !self.data.is_mine {
                         ui.image(self.image_source.cell_num[self.data.nearby_mines].clone())
+                    } else if cell_pos == self.data.position {
+                        ui.image(self.image_source.cell_mine_red)
                     } else {
-                        if cell_pos == self.data.position {
-                            ui.image(self.image_source.cell_mine_red)
-                        } else {
-                            ui.image(self.image_source.cell_mine)
-                        }
+                        ui.image(self.image_source.cell_mine)
                     }
                 }
                 crate::data::RoundEndingType::Victory => {

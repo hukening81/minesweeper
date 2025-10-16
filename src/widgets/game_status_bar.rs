@@ -1,4 +1,3 @@
-
 use crate::data::RoundData;
 pub struct PassedTimeIndicator {
     passed_time: u32,
@@ -30,6 +29,8 @@ impl RemainMineIndicator {
         Self { remain_mines }
     }
 }
+
+pub struct EmojiButton {}
 
 impl egui::Widget for RemainMineIndicator {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {

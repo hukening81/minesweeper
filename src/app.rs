@@ -1,55 +1,65 @@
+use std::cell;
+
 use crate::data::{GlobalState, RoundData};
 use egui::ImageSource;
 use log::debug;
 
 #[derive(Clone)]
 pub struct GameImageSource {
-    pub normal_block: egui::ImageSource<'static>,
-    pub empty_block: egui::ImageSource<'static>,
-    pub mine_block: egui::ImageSource<'static>,
-    pub mine_exploded: egui::ImageSource<'static>,
-    pub flagged: egui::ImageSource<'static>,
-    pub num1: egui::ImageSource<'static>,
-    pub num2: egui::ImageSource<'static>,
-    pub num3: egui::ImageSource<'static>,
-    pub num4: egui::ImageSource<'static>,
-    pub num5: egui::ImageSource<'static>,
-    pub num6: egui::ImageSource<'static>,
-    pub num7: egui::ImageSource<'static>,
-    pub num8: egui::ImageSource<'static>,
+    pub cell_num: Vec<egui::ImageSource<'static>>,
+    pub cell_num_yellow: Vec<egui::ImageSource<'static>>,
+    pub cell_closed: egui::ImageSource<'static>,
+    pub cell_flag: egui::ImageSource<'static>,
+    pub cell_mine: egui::ImageSource<'static>,
+    pub cell_mine_red: egui::ImageSource<'static>,
 }
 impl GameImageSource {
-    pub fn get_num_image_source(&self, num: u8) -> ImageSource {
-        match num {
-            0 => self.empty_block.clone(),
-            1 => self.num1.clone(),
-            2 => self.num2.clone(),
-            3 => self.num3.clone(),
-            4 => self.num4.clone(),
-            5 => self.num5.clone(),
-            6 => self.num6.clone(),
-            7 => self.num7.clone(),
-            8 => self.num8.clone(),
-            _ => panic!("Out of range"),
-        }
-    }
+    // pub fn get_num_image_source(&self, num: u8) -> ImageSource {
+    //     match num {
+    //         0 => self.cell_0.clone(),
+    //         1 => self.cell_1.clone(),
+    //         2 => self.cell_2.clone(),
+    //         3 => self.cell_3.clone(),
+    //         4 => self.cell_4.clone(),
+    //         5 => self.cell_5.clone(),
+    //         6 => self.cell_6.clone(),
+    //         7 => self.cell_7.clone(),
+    //         8 => self.cell_8.clone(),
+    //         _ => panic!("Out of range"),
+    //     }
+    // }
 }
 impl Default for GameImageSource {
     fn default() -> Self {
+        let mut cell_num = vec![];
+        cell_num.push(egui::include_image!("../assets/game/type0.svg"));
+        cell_num.push(egui::include_image!("../assets/game/type1.svg"));
+        cell_num.push(egui::include_image!("../assets/game/type2.svg"));
+        cell_num.push(egui::include_image!("../assets/game/type3.svg"));
+        cell_num.push(egui::include_image!("../assets/game/type4.svg"));
+        cell_num.push(egui::include_image!("../assets/game/type5.svg"));
+        cell_num.push(egui::include_image!("../assets/game/type6.svg"));
+        cell_num.push(egui::include_image!("../assets/game/type7.svg"));
+        cell_num.push(egui::include_image!("../assets/game/type8.svg"));
+
+        let mut cell_num_yellow = vec![];
+        cell_num_yellow.push(egui::include_image!("../assets/game/type0.svg"));
+        cell_num_yellow.push(egui::include_image!("../assets/game/type1_yellow.svg"));
+        cell_num_yellow.push(egui::include_image!("../assets/game/type2_yellow.svg"));
+        cell_num_yellow.push(egui::include_image!("../assets/game/type3_yellow.svg"));
+        cell_num_yellow.push(egui::include_image!("../assets/game/type4_yellow.svg"));
+        cell_num_yellow.push(egui::include_image!("../assets/game/type5_yellow.svg"));
+        cell_num_yellow.push(egui::include_image!("../assets/game/type6_yellow.svg"));
+        cell_num_yellow.push(egui::include_image!("../assets/game/type7_yellow.svg"));
+        cell_num_yellow.push(egui::include_image!("../assets/game/type8_yellow.svg"));
+
         Self {
-            normal_block: egui::include_image!("../assets/game/block.png"),
-            empty_block: egui::include_image!("../assets/game/empty.png"),
-            mine_block: egui::include_image!("../assets/game/mine.png"),
-            mine_exploded: egui::include_image!("../assets/game/mine_exploded.png"),
-            flagged: egui::include_image!("../assets/game/flag.png"),
-            num1: egui::include_image!("../assets/game/num1.png"),
-            num2: egui::include_image!("../assets/game/num2.png"),
-            num3: egui::include_image!("../assets/game/num3.png"),
-            num4: egui::include_image!("../assets/game/num4.png"),
-            num5: egui::include_image!("../assets/game/num5.png"),
-            num6: egui::include_image!("../assets/game/num6.png"),
-            num7: egui::include_image!("../assets/game/num7.png"),
-            num8: egui::include_image!("../assets/game/num8.png"),
+            cell_num,
+            cell_num_yellow,
+            cell_flag: egui::include_image!("../assets/game/flag.svg"),
+            cell_closed: egui::include_image!("../assets/game/closed.svg"),
+            cell_mine: egui::include_image!("../assets/game/mine.svg"),
+            cell_mine_red: egui::include_image!("../assets/game/mine_red.svg"),
         }
     }
 }

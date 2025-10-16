@@ -1,6 +1,6 @@
 use crate::{
     app::GameImageSource,
-    data::{CellData, CellPos, CellRenderState, RoundData, RoundState},
+    data::{CellData, CellPos, CellRenderState, RoundData, RoundEndingType, RoundState},
 };
 
 pub struct Cell {
@@ -16,44 +16,39 @@ impl Cell {
             image_source,
         }
     }
-    fn get_revealed_image_source(&self) -> egui::ImageSource {
-        if self.data.is_mine {
-            self.image_source.mine_block.clone()
-        } else {
-            self.image_source
-                .get_num_image_source(self.data.nearby_mines)
-        }
-    }
 }
 
 impl egui::Widget for Cell {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        let revealed_image_source = self.get_revealed_image_source();
         match &self.round_state_type {
-            RoundState::NotStarted => ui.image(self.image_source.normal_block),
+            RoundState::NotStarted => ui.image(self.image_source.cell_closed),
             RoundState::Playing => match self.data.render_state {
-                CellRenderState::Revealed => ui.image(revealed_image_source.clone()),
+                CellRenderState::Revealed => {
+                    ui.image(self.image_source.cell_num[self.data.nearby_mines].clone())
+                }
                 CellRenderState::Covered => {
                     if self.data.is_flagged {
-                        ui.image(self.image_source.flagged)
+                        ui.image(self.image_source.cell_flag)
                     } else {
-                        ui.image(self.image_source.normal_block)
+                        ui.image(self.image_source.cell_closed)
                     }
                 }
             },
             RoundState::Ended(round_ending_type) => match round_ending_type.clone() {
                 crate::data::RoundEndingType::ClickedMine(cell_pos) => {
                     if !self.data.is_mine {
-                        ui.image(revealed_image_source)
+                        ui.image(self.image_source.cell_num[self.data.nearby_mines].clone())
                     } else {
                         if cell_pos == self.data.position {
-                            ui.image(self.image_source.mine_exploded)
+                            ui.image(self.image_source.cell_mine_red)
                         } else {
-                            ui.image(self.image_source.mine_block)
+                            ui.image(self.image_source.cell_mine)
                         }
                     }
                 }
-                crate::data::RoundEndingType::Victory => ui.image(revealed_image_source),
+                crate::data::RoundEndingType::Victory => {
+                    ui.image(self.image_source.cell_num[self.data.nearby_mines].clone())
+                }
             },
         }
     }
@@ -104,11 +99,15 @@ impl egui::Widget for GameBoard<'_> {
                             egui::Id::from(format!("{j},{k}")),
                             egui::Sense::click(),
                         );
-                        if response.clicked_by(egui::PointerButton::Primary) {
-                            self.handle_left_click(&CellPos::new(j, k));
-                        }
-                        if response.clicked_by(egui::PointerButton::Secondary) {
-                            self.handle_right_click(&CellPos::new(j, k));
+                        if (self.round_state.round_state_type == RoundState::NotStarted)
+                            || self.round_state.round_state_type == RoundState::Playing
+                        {
+                            if response.clicked_by(egui::PointerButton::Primary) {
+                                self.handle_left_click(&CellPos::new(j, k));
+                            }
+                            if response.clicked_by(egui::PointerButton::Secondary) {
+                                self.handle_right_click(&CellPos::new(j, k));
+                            }
                         }
                     }
                     ui.end_row();
@@ -143,7 +142,7 @@ impl GameBoard<'_> {
                         let surround_cells =
                             self.round_state.board_data.get_surround_cells(pos).clone();
                         if origin_cell.nearby_mines
-                            == surround_cells.iter().filter(|it| it.is_flagged).count() as u8
+                            == surround_cells.iter().filter(|it| it.is_flagged).count()
                         {
                             self.reveal_nearby_cell(pos);
                         }

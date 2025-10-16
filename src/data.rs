@@ -65,7 +65,7 @@ pub struct CellData {
     pub position: CellPos,
     pub is_mine: bool,
     pub is_flagged: bool,
-    pub nearby_mines: u8,
+    pub nearby_mines: usize,
     pub render_state: CellRenderState,
 }
 

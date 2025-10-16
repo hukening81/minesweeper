@@ -68,8 +68,12 @@ impl<'a> GameBoard<'a> {
 }
 impl egui::Widget for GameBoard<'_> {
     fn ui(mut self, ui: &mut egui::Ui) -> egui::Response {
-        // let global_state: crate::data::GlobalState =
-        //     ui.data(|d| d.get_temp(egui::Id::NULL)).unwrap();
+
+        #[cfg(debug_assertions)]
+        if self.round_state.round_state_type == RoundState::Playing {
+            self.round_state.solve_for_me();
+        }
+
         let image_source: crate::app::GameImageSource =
             ui.data(|d| d.get_temp(egui::Id::new("IMAGE_SOURCE")).unwrap());
 
